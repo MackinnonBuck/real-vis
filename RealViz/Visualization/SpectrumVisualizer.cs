@@ -15,9 +15,6 @@ namespace RealVis.Visualization
         private bool isInitialized;
         private float[] fftBuffer;
 
-        protected int ViewportWidth { get; private set; }
-        protected int ViewportHeight { get; private set; }
-
         protected abstract void Update(GameTime gameTime, float[] fftBuffer);
         protected abstract void Render(GameTime gameTime, SpriteBatch spriteBatch, float[] fftBuffer);
 
@@ -26,12 +23,9 @@ namespace RealVis.Visualization
         /// </summary>
         /// <param name="device"></param>
         /// <param name="fftSize"></param>
-        public SpectrumVisualizer(GraphicsDevice device, FftSize fftSize)
+        public SpectrumVisualizer(FftSize fftSize)
         {
             FftSize = fftSize;
-
-            ViewportWidth = device.Viewport.Width;
-            ViewportHeight = device.Viewport.Height;
         }
 
         /// <summary>

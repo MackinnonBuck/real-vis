@@ -16,7 +16,9 @@ namespace RealVis.Visualization
         SpectrumPointData[] spectrumPoints;
         Blob[] blobs;
         Emitter emitter;
+        Random random;
 
+        Camera2D camera;
         Texture2D circleTexture;
         Texture2D rvCircleTexture;
 
@@ -27,16 +29,18 @@ namespace RealVis.Visualization
 
         const int BlobCount = 8;
         const int BaseRadius = 160;
-        const double PeakScale = 100;
-        const int LowCap = 25;
+        const double PeakScale = 150;
+        const int LowCap = 15;
         const int HighMin = 100;
         const int HighCap = 300;
-        const int LowAvgBufferSize = 20;
+        const int LowRisingBufferSize = 3;
+        const int LowFallingBufferSize = 15;
         const int HighAvgBufferSize = 10;
         const float DeviationScale = 150f;
         const float EmitterBoostThreshold = 3.5f;
+        const float CameraShakeThreshold = 10f;
         const double LowDeviationInfluence = 0.05f;
-        const double ExpandThreshold = 0.25;
+        const double ExpandThreshold = 0.5;
         double lowAvgBuffer;
         double highAvgBuffer;
 
@@ -47,8 +51,8 @@ namespace RealVis.Visualization
         /// <param name="device"></param>
         /// <param name="spectrumProvider"></param>
         /// <param name="fftSize"></param>
-        public BlobSpectrum(MainGame game, GraphicsDevice device, SpectrumProvider spectrumProvider, FftSize fftSize)
-            : base(device, fftSize)
+        public BlobSpectrum(MainGame game, SpectrumProvider spectrumProvider, FftSize fftSize)
+            : base(fftSize)
         {
             SpectrumProvider = spectrumProvider;
             UseAverage = true;
@@ -56,17 +60,18 @@ namespace RealVis.Visualization
             IsXLogScale = true;
             ScalingStrategy = ScalingStrategy.Linear;
 
-            emitter = new Emitter(game, ViewportWidth, ViewportHeight);
+            emitter = new Emitter(game, MainGame.ViewportWidth, MainGame.ViewportHeight);
 
+            camera = game.Camera;
             circleTexture = game.Content.Load<Texture2D>("Images/Circle");
             rvCircleTexture = game.Content.Load<Texture2D>("Images/RvCircle");
 
             blobs = new Blob[BlobCount];
 
-            Random r = new Random();
+            random = new Random();
 
             for (int i = 0; i < blobs.Length; i++)
-                blobs[i] = new Blob(circleTexture, new HslColor(i * (255 / blobs.Length), 0.5f, 0.5f).ToRgb(), r, ViewportWidth, ViewportHeight);
+                blobs[i] = new Blob(circleTexture, new HslColor(i * (255 / blobs.Length), 0.5f, 0.5f).ToRgb(), random);
 
             lowAvgBuffer = 0;
             highAvgBuffer = 0;
@@ -87,7 +92,7 @@ namespace RealVis.Visualization
                 if (spectrumPoints[i].Value > lowPeak)
                     lowPeak = spectrumPoints[i].Value;
 
-            RecalculateAverage(ref lowAvgBuffer, LowAvgBufferSize, lowPeak);
+            RecalculateAverage(ref lowAvgBuffer, lowPeak > lowAvgBuffer ? LowRisingBufferSize : LowFallingBufferSize, lowPeak);
 
             double highAvg = 0.0;
 
@@ -106,6 +111,9 @@ namespace RealVis.Visualization
 
             emitter.Boost = lowAvgBuffer > ExpandThreshold ? 1.0f + (float)(lowAvgBuffer - ExpandThreshold) * EmitterBoostThreshold : 1.0f;
             emitter.Update(gameTime);
+
+            if (lowAvgBuffer > ExpandThreshold)
+                camera.Position = new Vector2(random.NextSingle(), random.NextSingle()) * (float)(lowAvgBuffer - ExpandThreshold) * CameraShakeThreshold;
         }
 
         /// <summary>
@@ -116,7 +124,9 @@ namespace RealVis.Visualization
         /// <param name="fftBuffer"></param>
         protected override void Render(GameTime gameTime, SpriteBatch spriteBatch, float[] fftBuffer)
         {
-            spriteBatch.Begin(blendState: BlendState.Additive);
+            Matrix cameraMatrix = camera.GetViewMatrix();
+
+            spriteBatch.Begin(blendState: BlendState.Additive, transformMatrix: cameraMatrix);
 
             emitter.Render(gameTime, spriteBatch);
 
@@ -127,17 +137,22 @@ namespace RealVis.Visualization
 
             spriteBatch.End();
 
-            spriteBatch.Begin();
+            spriteBatch.Begin(transformMatrix: cameraMatrix);
 
-            spriteBatch.Draw(rvCircleTexture, new Rectangle(ViewportWidth / 2, ViewportHeight / 2,
+            spriteBatch.Draw(rvCircleTexture, new Rectangle(MainGame.ViewportWidth / 2, MainGame.ViewportHeight / 2,
                 circleRadius * 2, circleRadius * 2), null, Color.White, 0.0f, new Vector2(SourceRadius), SpriteEffects.None, 1);
 
-            Vector2 lastPoint = new Vector2(0, ViewportHeight - (float)(spectrumPoints[0].Value * 500.0));
+            spriteBatch.End();
+
+            spriteBatch.Begin();
+
+            Vector2 lastPoint = new Vector2(0, MainGame.ViewportHeight - (float)(spectrumPoints[0].Value * 500.0));
 
             for (int i = 1; i < spectrumPoints.Length; i++)
             {
-                Vector2 currentPoint = new Vector2((float)ViewportWidth / spectrumPoints.Length * i, ViewportHeight - (float)(spectrumPoints[i].Value * 500.0));
+                Vector2 currentPoint = new Vector2((float)MainGame.ViewportWidth / spectrumPoints.Length * i, MainGame.ViewportHeight - (float)(spectrumPoints[i].Value * 500.0));
                 spriteBatch.DrawLine(lastPoint, currentPoint, Color.White, 2);
+
                 lastPoint = currentPoint;
             }
 

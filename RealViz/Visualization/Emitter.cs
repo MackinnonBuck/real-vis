@@ -36,7 +36,7 @@ namespace RealVis.Visualization
             particles = new Particle[NumParticles];
 
             for (int i = 0; i < NumParticles; i++)
-                particles[i] = new Particle(particleTexture, random, viewportWidth, viewportHeight);
+                particles[i] = new Particle(particleTexture, random);
         }
 
         /// <summary>

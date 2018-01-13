@@ -30,22 +30,17 @@ namespace RealVis.Visualization
         float lifeTime;
         float sinceRetarget;
 
-        readonly int viewportWidth;
-        readonly int viewportHeight;
-
         /// <summary>
         /// Initializes a new Particle instance.
         /// </summary>
         /// <param name="particleTexture"></param>
         /// <param name="random"></param>
-        /// <param name="viewportWidth"></param>
-        /// <param name="viewportHeight"></param>
-        public Particle(Texture2D particleTexture, Random random, int viewportWidth, int viewportHeight)
+        /// <param name="MainGame.ViewportWidth"></param>
+        /// <param name="MainGame.ViewportHeight"></param>
+        public Particle(Texture2D particleTexture, Random random)
         {
             this.particleTexture = particleTexture;
             this.random = random;
-            this.viewportWidth = viewportWidth;
-            this.viewportHeight = viewportHeight;
 
             color = new HslColor(random.Next(0, 255), 0.25f, 0.75f).ToRgb();
 
@@ -80,9 +75,9 @@ namespace RealVis.Visualization
             }
 
             lifeTime += boostDeltaTime;
-            realPosition += (realPosition - new Vector2(viewportWidth / 2, viewportHeight / 2)) * lifeTime * boostDeltaTime * ZoomSpeed;
+            realPosition += (realPosition - new Vector2(MainGame.ViewportWidth / 2, MainGame.ViewportHeight / 2)) * lifeTime * boostDeltaTime * ZoomSpeed;
 
-            if (realPosition.Y < 0 || realPosition.Y > viewportHeight || realPosition.X < 0 || realPosition.X > viewportWidth)
+            if (realPosition.Y < 0 || realPosition.Y > MainGame.ViewportHeight || realPosition.X < 0 || realPosition.X > MainGame.ViewportWidth)
                 Reset();
         }
 
@@ -101,7 +96,7 @@ namespace RealVis.Visualization
         /// </summary>
         private void Reset()
         {
-            realPosition = new Vector2(random.Next(viewportWidth), random.Next(viewportHeight));
+            realPosition = new Vector2(random.Next(MainGame.ViewportWidth), random.Next(MainGame.ViewportHeight));
             loosePosition = Vector2.Zero;
             looseTarget = Vector2.Zero;
             looseVelocity = Vector2.Zero;

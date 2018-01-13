@@ -23,9 +23,6 @@ namespace RealVis.Visualization
 
         float sinceRetarget;
 
-        int viewportWidth;
-        int viewportHeight;
-
         /// <summary>
         /// Controls how far the Blob deviates outside of the main circle.
         /// </summary>
@@ -39,12 +36,10 @@ namespace RealVis.Visualization
         /// <param name="random"></param>
         /// <param name="viewportWidth"></param>
         /// <param name="viewportHeight"></param>
-        public Blob(Texture2D circleTexture, Color color, Random random, int viewportWidth, int viewportHeight)
+        public Blob(Texture2D circleTexture, Color color, Random random)
         {
             this.circleTexture = circleTexture;
             this.color = color;
-            this.viewportWidth = viewportWidth;
-            this.viewportHeight = viewportHeight;
             this.random = random;
 
             position = Vector2.Zero;
@@ -90,7 +85,7 @@ namespace RealVis.Visualization
         /// <param name="radius"></param>
         public void Render(GameTime gameTime, SpriteBatch spriteBatch, int radius)
         {
-            spriteBatch.Draw(circleTexture, new Rectangle(viewportWidth / 2 + (int)(position.X * Deviation), viewportHeight / 2 + (int)(position.Y * Deviation),
+            spriteBatch.Draw(circleTexture, new Rectangle(MainGame.ViewportWidth / 2 + (int)(position.X * Deviation), MainGame.ViewportHeight / 2 + (int)(position.Y * Deviation),
                 radius * 2, radius * 2), null, color, 0.0f, new Vector2(BlobSpectrum.SourceRadius), SpriteEffects.None, 1);
         }
     }

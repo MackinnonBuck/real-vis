@@ -5,6 +5,8 @@ using CSCore.Streams;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
+using MonoGame.Extended;
+using MonoGame.Extended.ViewportAdapters;
 using RealVis.Visualization;
 
 namespace RealVis
@@ -14,8 +16,14 @@ namespace RealVis
     /// </summary>
     public class MainGame : Game
     {
+        public const int ViewportWidth = 1920;
+        public const int ViewportHeight = 1080;
+
+        public Camera2D Camera { get; private set; }
+
         GraphicsDeviceManager graphics;
         SpriteBatch spriteBatch;
+        BoxingViewportAdapter viewportAdapter;
 
         WasapiCapture soundIn;
         IWaveSource source;
@@ -34,7 +42,7 @@ namespace RealVis
             SpectrumProvider spectrumProvider = new SpectrumProvider(sampleSource.WaveFormat.Channels,
                 sampleSource.WaveFormat.SampleRate, fftSize);
 
-            spectrum = new BlobSpectrum(this, GraphicsDevice, spectrumProvider, FftSize.Fft4096);
+            spectrum = new BlobSpectrum(this, spectrumProvider, FftSize.Fft4096);
 
             SingleBlockNotificationStream notificationSource = new SingleBlockNotificationStream(sampleSource);
             notificationSource.SingleBlockRead += (s, a) => spectrumProvider.Add(a.Left, a.Right);
@@ -51,10 +59,13 @@ namespace RealVis
 
             graphics.HardwareModeSwitch = false;
 
-            graphics.PreferredBackBufferWidth = 1280;
-            graphics.PreferredBackBufferHeight = 720;
-            //graphics.IsFullScreen = true;
+            graphics.PreferredBackBufferWidth = ViewportWidth;
+            graphics.PreferredBackBufferHeight = ViewportHeight;
+            graphics.IsFullScreen = true;
             graphics.ApplyChanges();
+
+            viewportAdapter = new BoxingViewportAdapter(Window, GraphicsDevice, ViewportWidth, ViewportHeight);
+            Camera = new Camera2D(viewportAdapter);
 
             soundIn = new WasapiLoopbackCapture();
             soundIn.Initialize();
