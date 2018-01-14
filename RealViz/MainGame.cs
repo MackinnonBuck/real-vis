@@ -68,6 +68,7 @@ namespace RealVis
             Camera = new Camera2D(viewportAdapter);
 
             soundIn = new WasapiLoopbackCapture();
+            //soundIn = new WasapiCapture();
             soundIn.Initialize();
 
             SoundInSource inSource = new SoundInSource(soundIn);

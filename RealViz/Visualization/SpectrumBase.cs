@@ -27,7 +27,7 @@ namespace RealVis.Visualization
         private int maxFftIndex;
         private int maximumFrequency = 20000;
         private int maximumFrequencyIndex;
-        private int minimumFrequency = 0;
+        private int minimumFrequency = 20;
         private int minimumFrequencyIndex;
         private ScalingStrategy scalingStrategy;
         private int[] spectrumIndexMax;

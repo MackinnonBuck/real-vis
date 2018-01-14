@@ -38,7 +38,7 @@ namespace RealVis.Visualization
         const int HighAvgBufferSize = 10;
         const float DeviationScale = 150f;
         const float EmitterBoostThreshold = 3.5f;
-        const float CameraShakeThreshold = 10f;
+        const float CameraShakeThreshold = 12f;
         const double LowDeviationInfluence = 0.05f;
         const double ExpandThreshold = 0.5;
         double lowAvgBuffer;
