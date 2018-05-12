@@ -19,8 +19,8 @@ namespace RealVis.Visualization
         Random random;
 
         Camera2D camera;
-        Texture2D circleTexture;
-        Texture2D rvCircleTexture;
+        readonly Texture2D circleTexture;
+        readonly Texture2D rvCircleTexture;
 
         /// <summary>
         /// The radius of the source image.
@@ -41,6 +41,7 @@ namespace RealVis.Visualization
         const float CameraShakeThreshold = 12f;
         const double LowDeviationInfluence = 0.05f;
         const double ExpandThreshold = 0.5;
+
         double lowAvgBuffer;
         double highAvgBuffer;
 
@@ -64,7 +65,7 @@ namespace RealVis.Visualization
 
             camera = game.Camera;
             circleTexture = game.Content.Load<Texture2D>("Images/Circle");
-            rvCircleTexture = game.Content.Load<Texture2D>("Images/RvCircle");
+            rvCircleTexture = game.Content.Load<Texture2D>("Images/MachCircle");
 
             blobs = new Blob[BlobCount];
 

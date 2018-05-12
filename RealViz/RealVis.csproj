@@ -47,6 +47,10 @@
     <Compile Include="MainGame.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Visualization\Car.cs" />
+    <Compile Include="Visualization\CircularBuffer.cs" />
+    <Compile Include="Visualization\RLMatrix.cs" />
+    <Compile Include="Visualization\RLSpectrum.cs" />
     <Compile Include="Visualization\Blob.cs" />
     <Compile Include="Visualization\BlobSpectrum.cs" />
     <Compile Include="Visualization\Emitter.cs" />

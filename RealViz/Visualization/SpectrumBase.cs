@@ -16,7 +16,7 @@ namespace RealVis.Visualization
         protected const double MaxDbValue = 0;
         protected const double DbScale = (MaxDbValue - MinDbValue);
 
-        protected struct SpectrumPointData
+        public struct SpectrumPointData
         {
             public int SpectrumPointIndex { get; set; }
             public double Value { get; set; }
