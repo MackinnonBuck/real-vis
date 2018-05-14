@@ -9,13 +9,13 @@ using System.Threading.Tasks;
 
 namespace RealViz.Visualization
 {
-    public class Car
+    public class RLCar
     {
-        const float RetargetTime = 1f;
-        const float Acceleration = 0.01f;
-        const float Padding = 1.05f;
+        const float RetargetTime = 0.0125f;
+        const float Acceleration = 0.075f;
+        const float Padding = 1.1f;
         const float VerticalOffset = 128f;
-        const float Deviation = 16f;
+        const float Deviation = 8f;
 
         readonly Texture2D carTexture;
         readonly Color color;
@@ -28,7 +28,13 @@ namespace RealViz.Visualization
 
         float sinceRetarget;
 
-        public Car(Texture2D carTexture, Color color, Random random)
+        /// <summary>
+        /// Creates a new RLCar instance
+        /// </summary>
+        /// <param name="carTexture"></param>
+        /// <param name="color"></param>
+        /// <param name="random"></param>
+        public RLCar(Texture2D carTexture, Color color, Random random)
         {
             this.carTexture = carTexture;
             this.color = color;
@@ -44,6 +50,10 @@ namespace RealViz.Visualization
             sinceRetarget = 0f;
         }
 
+        /// <summary>
+        /// Updates the RLCar's position
+        /// </summary>
+        /// <param name="gameTime"></param>
         public void Update(GameTime gameTime)
         {
             if (target != position)
@@ -67,6 +77,10 @@ namespace RealViz.Visualization
             }
         }
 
+        /// <summary>
+        /// Draws the RLCar
+        /// </summary>
+        /// <param name="spriteBatch"></param>
         public void Draw(SpriteBatch spriteBatch)
         {
             spriteBatch.Draw(carTexture, basePosition + position, color);

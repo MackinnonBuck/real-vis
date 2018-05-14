@@ -2,11 +2,6 @@
 using Microsoft.Xna.Framework.Graphics;
 using RealVis;
 using RealVis.Visualization;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace RealViz.Visualization
 {
@@ -14,30 +9,39 @@ namespace RealViz.Visualization
     {
         const float Offset = -30;
         const float MatrixRange = 60f;
-        const float MatrixSpan = 26f;
-        const float LaneSize = 15f;
-        const float LaneDamping = 0.25f;
-        const float WaveScale = 4f;
+        const float MatrixSpan = 26;
+        const float WaveScale = 75f;
+        const float LaneScale = 3f;
+        const int LaneWidth = 5;
 
-        readonly MainGame mainGame;
+        readonly MainGame game;
         readonly CircularBuffer<VertexPositionTexture[]> matrix;
         readonly VertexPositionTexture[][] columns;
-        readonly int entryResolution;
-        readonly int entryCount;
+        readonly int resolution;
+        readonly int numEntries;
         readonly BasicEffect effect;
         readonly float matrixSegment;
+        readonly int laneStart;
+        readonly int laneEnd;
+        readonly float[] scaledPointData;
 
         float zOffset;
-        float[] scaledPointData;
 
-        public RLMatrix(MainGame game, int count, int resolution)
+        /// <summary>
+        /// Creates a new RLMatrix instance
+        /// </summary>
+        /// <param name="game"></param>
+        /// <param name="numEntries"></param>
+        /// <param name="resolution"></param>
+        public RLMatrix(MainGame game, int numEntries, int resolution)
         {
-            mainGame = game;
-            entryResolution = resolution;
-            entryCount = count;
-            matrix = new CircularBuffer<VertexPositionTexture[]>(count);
+            this.game = game;
+            this.resolution = resolution;
+            this.numEntries = numEntries;
 
-            for (int i = 0; i < count; i++)
+            matrix = new CircularBuffer<VertexPositionTexture[]>(numEntries);
+
+            for (int i = 0; i < numEntries; i++)
             {
                 VertexPositionTexture[] vpt = new VertexPositionTexture[resolution];
 
@@ -50,7 +54,7 @@ namespace RealViz.Visualization
             columns = new VertexPositionTexture[resolution][];
 
             for (int i = 0; i < resolution; i++)
-                columns[i] = new VertexPositionTexture[count];
+                columns[i] = new VertexPositionTexture[numEntries];
 
             effect = new BasicEffect(game.GraphicsDevice)
             {
@@ -70,57 +74,60 @@ namespace RealViz.Visualization
 
             effect.Projection = Matrix.CreatePerspectiveFieldOfView(fieldOfView, aspectRatio, nearClipPlane, farClipPlane);
 
-            matrixSegment = MatrixRange / count;
+            matrixSegment = MatrixRange / numEntries;
+
+            laneStart = (resolution - LaneWidth) / 2;
+            laneEnd = (resolution + LaneWidth) / 2;
 
             zOffset = 0f;
 
             scaledPointData = new float[resolution];
         }
 
+        /// <summary>
+        /// Updates the RLMatrix's vertices
+        /// </summary>
+        /// <param name="gameTime"></param>
+        /// <param name="speed"></param>
+        /// <param name="pointData"></param>
         public void Update(GameTime gameTime, float speed, SpectrumBase.SpectrumPointData[] pointData)
         {
-            while (zOffset > matrixSegment)
-            {
-                VertexPositionTexture[] newVpt = matrix.Back;
+            Process(pointData, WaveScale, 0, laneStart);
+            Process(pointData, LaneScale, laneStart, laneEnd);
+            Process(pointData, WaveScale, laneEnd, resolution);
 
-                for (int i = 0; i < entryResolution; i++)
-                    newVpt[i].Position.Y = Math.Max(scaledPointData[i] * 5f *
-                        Math.Min(LaneSize, Math.Abs(i - (float)(entryResolution - 1) / 2)) / LaneSize - LaneDamping, 0);
+            for (int i = 0; i < laneStart; i++)
+                scaledPointData[i] *= (float)(laneStart - i) / laneStart;
 
-                matrix.Add(newVpt);
-
-                zOffset -= matrixSegment;
-            }
-
-            double lowerMin = double.MaxValue;
-
-            for (int i = 0; i < entryResolution / 2; i++)
-                if (lowerMin > pointData[i].Value)
-                    lowerMin = pointData[i].Value;
-
-            for (int i = 0; i < entryResolution / 2; i++)
-                scaledPointData[i] = (float)(pointData[i].Value - lowerMin) * WaveScale;
-
-            double upperMin = double.MaxValue;
-
-            for (int i = entryResolution / 2; i < entryResolution; i++)
-                if (upperMin > pointData[i].Value)
-                    upperMin = pointData[i].Value;
-
-            for (int i = entryResolution / 2; i < entryResolution; i++)
-                scaledPointData[i] = (float)(pointData[i].Value - upperMin) * WaveScale;
+            for (int i = laneEnd; i < resolution; i++)
+                scaledPointData[i] *= (float)(i - laneEnd) / (resolution - laneEnd);
 
             zOffset += gameTime.ElapsedGameTime.Milliseconds * 0.001f * speed;
 
-            for (int i = 0; i < entryCount; i++)
-                for (int j = 0; j < entryResolution; j++)
-                    matrix[i][j].Position.Z = Offset + i * matrixSegment + zOffset; 
+            for (; zOffset > matrixSegment; zOffset -= matrixSegment)
+            {
+                VertexPositionTexture[] newVpt = matrix.Back;
+
+                for (int i = 0; i < resolution; i++)
+                    newVpt[i].Position.Y = scaledPointData[i];
+
+                matrix.Add(newVpt);
+            }
+
+            for (int i = 0; i < numEntries; i++)
+                for (int j = 0; j < resolution; j++)
+                    matrix[i][j].Position.Z = Offset + i * matrixSegment + zOffset;
         }
 
+        /// <summary>
+        /// Renders the RLMatrix's vertices
+        /// </summary>
+        /// <param name="gameTime"></param>
+        /// <param name="spirteBatch"></param>
         public void Render(GameTime gameTime, SpriteBatch spirteBatch)
         {
-            for (int i = 0; i < entryCount; i++)
-                for (int j = 0; j < entryResolution; j++)
+            for (int i = 0; i < numEntries; i++)
+                for (int j = 0; j < resolution; j++)
                     columns[j][i] = matrix[i][j];
 
             foreach (EffectPass pass in effect.CurrentTechnique.Passes)
@@ -128,11 +135,77 @@ namespace RealViz.Visualization
                 pass.Apply();
 
                 foreach (VertexPositionTexture[] vtp in matrix)
-                    mainGame.GraphicsDevice.DrawUserPrimitives(PrimitiveType.LineStrip, vtp, 0, vtp.Length - 1);
+                    game.GraphicsDevice.DrawUserPrimitives(PrimitiveType.LineStrip, vtp, 0, vtp.Length - 1);
 
-                for (int i = 0; i < entryResolution; i++)
-                    mainGame.GraphicsDevice.DrawUserPrimitives(PrimitiveType.LineStrip, columns[i], 0, entryCount - 1);
+                for (int i = 0; i < resolution; i++)
+                    game.GraphicsDevice.DrawUserPrimitives(PrimitiveType.LineStrip, columns[i], 0, numEntries - 1);
             }
+        }
+
+        /// <summary>
+        /// Runs the processing pipeline on teh given point data
+        /// </summary>
+        /// <param name="pointData"></param>
+        /// <param name="scale"></param>
+        /// <param name="min"></param>
+        /// <param name="max"></param>
+        private void Process(SpectrumBase.SpectrumPointData[] pointData, float scale, int min, int max)
+        {
+            CalculateRange(pointData, min, max, out double low, out double average);
+            Normalize(pointData, scale, min, max, low, average);
+            Balance(min, max);
+        }
+
+        /// <summary>
+        /// Calculates the low boundary and average value of the given point data
+        /// </summary>
+        /// <param name="pointData"></param>
+        /// <param name="min"></param>
+        /// <param name="max"></param>
+        /// <param name="low"></param>
+        /// <param name="average"></param>
+        private void CalculateRange(SpectrumBase.SpectrumPointData[] pointData, int min, int max, out double low, out double average)
+        {
+            low = double.MaxValue;
+            average = 0.0;
+
+            for (int i = min; i < max; i++)
+            {
+                average += pointData[i].Value;
+
+                if (low > pointData[i].Value)
+                    low = pointData[i].Value;
+            }
+
+            average /= (max - min);
+        }
+
+        /// <summary>
+        /// Normalizes the point data based on the amplitude and low boundary of the point data
+        /// </summary>
+        /// <param name="pointData"></param>
+        /// <param name="scale"></param>
+        /// <param name="min"></param>
+        /// <param name="max"></param>
+        /// <param name="low"></param>
+        /// <param name="average"></param>
+        private void Normalize(SpectrumBase.SpectrumPointData[] pointData, float scale, int min, int max, double low, double average)
+        {
+            for (int i = min; i < max; i++)
+                scaledPointData[i] = (float)(pointData[i].Value - low) * (float)average * scale;
+        }
+
+        /// <summary>
+        /// Balances the scaled point data in the given range
+        /// </summary>
+        /// <param name="min"></param>
+        /// <param name="max"></param>
+        private void Balance(int min, int max)
+        {
+            float avg = (scaledPointData[max - 1] + scaledPointData[min]) * 0.5f;
+
+            for (int i = min; i < max; i++)
+                scaledPointData[i] += avg * MathHelper.Lerp(-1f, 1f, (float)(i - min) / (max - min));
         }
     }
 }
